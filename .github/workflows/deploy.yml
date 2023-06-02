@@ -2,7 +2,7 @@ name: Build and Deploy Demo
 on:
   push:
     branches:
-      - main
+      - master
 permissions:
   contents: write
 concurrency:
