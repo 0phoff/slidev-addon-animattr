@@ -11,6 +11,14 @@
     "attribute",
     "css"
   ],
+  "files": [
+    "setup/*",
+    "LICENSE",
+    "package.json",
+    "README.md",
+    "vite-svg-loader.js",
+    "vite.config.js"
+  ],
   "engines": {
     "node": ">=14.0.0",
     "slidev": ">=0.32.1"
