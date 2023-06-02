@@ -1,0 +1,35 @@
+{
+  "name": "slidev-addon-animattr",
+  "version": "0.0.1",
+  "description": "SliDev addon to animate an element with a data-attribute",
+  "author": "0phoff",
+  "license": "MIT",
+  "keywords": [
+    "slidev-addon",
+    "slidev",
+    "animate",
+    "attribute",
+    "css"
+  ],
+  "engines": {
+    "node": ">=14.0.0",
+    "slidev": ">=0.19.3"
+  },
+  "scripts": {
+    "build": "slidev build example.md",
+    "dev": "slidev example.md",
+    "export": "slidev export example.md",
+    "screenshot": "slidev export example.md --format png",
+    "serve": "vue-cli-service serve"
+  },
+  "devDependencies": {
+    "@iconify-json/mdi": "^1.1.52",
+    "@slidev/cli": "^0.40.16",
+    "@slidev/theme-default": "latest",
+    "@vue/cli-service": "^5.0.8",
+    "playwright-chromium": "^1.34.3"
+  },
+  "dependencies": {
+    "svgo": "^3.0.2"
+  }
+}
