@@ -19,14 +19,20 @@
  
 ## Installation
 
-Add the following frontmatter to your `slides.md`.  
-Start Slidev then it will prompt you to install the addon automatically.  
-[More Information](https://sli.dev/addons/use.html)
+First, install the addon.
+
+```bash
+npm install slidev-addon-animattr
+```
+
+Then, add the following frontmatter to your `slides.md`.  
 
 <pre><code>---
 addons:
-  - <b>animattr</b>
+  - <b>slidev-addon-animattr</b>
 ---</code></pre>
+
+[More Information](https://sli.dev/addons/use.html)
 
 ## Usage
 Make sure to check out this [demo presentation](https://0phoff.github.io/slidev-addon-animattr),
