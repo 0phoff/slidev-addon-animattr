@@ -2,15 +2,20 @@
   "name": "slidev-addon-animattr",
   "version": "0.0.1",
   "description": "SliDev addon to animate an element with a data-attribute",
-  "author": "0phoff",
+  "author": "0phoff <0phoff@users.noreply.github.com>",
   "license": "MIT",
   "keywords": [
-    "slidev-addon",
     "slidev",
+    "slidev-addon",
     "animate",
     "attribute",
     "css"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0phoff/slidev-addon-animattr"
+  },
+  "bugs": "https://github.com/0phoff/slidev-addon-animattr/issues",
   "files": [
     "setup/*",
     "LICENSE",
