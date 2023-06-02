@@ -33,7 +33,7 @@ jobs:
 
       # Build demo
       - name: Build
-        run: pnpm run build
+        run: pnpm run build --base /slidev-addon-animattr/
         
       # Deploy
       - name: Deploy
