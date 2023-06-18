@@ -36,7 +36,10 @@ title: AnimAttr
 <div class="grid grid-cols-2 place-items-center w-full">
 
 ```html
-<div class="test" v-animattr="2" />
+<div
+ class="test"
+ v-animattr :length="2"
+/>
 
 <style>
     .test {
@@ -89,7 +92,7 @@ title: AnimAttr
 <div class="flex flex-col justify-around text-center items-center">
 
 <!-- SVG is used inline here so we do not need a separate file, but it can be placed in components. -->
-<svg width="300px" viewBox="0 0 100 100" v-animattr.on-load="1">
+<svg width="250px" viewBox="0 0 100 100" v-animattr="1" :start="0">
     <rect width="50" height="50" x="25" y="25" fill="transparent" stroke="#4C72B0" stroke-width="5px" stroke-linecap="square" pathLength="1" />
 </svg>
 
@@ -98,6 +101,8 @@ allowing for more reusable components.
 They will then be loaded as scoped CSS  
 and not pollute other SVGs.
 
+Additionally, you can add the attributes for the  
+`v-animattr` directive as `data-*` attributes in the SVG file as well (eg. `data-length="1"`).
 </div>
 
 <div style="margin-top: -25px">
@@ -116,7 +121,7 @@ and not pollute other SVGs.
 
 ```html
 <!-- slides.md -->
-<CustomRect v-animattr.on-load="1" />
+<CustomRect v-animattr :start="0" :length="1"/>
 
 <style>
     svg[data-animattr] rect {
@@ -141,6 +146,7 @@ and not pollute other SVGs.
 
     p {
         opacity: 0.6;
+        margin-top: 0 !important;
     }
     
 
@@ -162,13 +168,13 @@ and not pollute other SVGs.
 
 Clicks: {{ $slidev.nav.clicks }}
 
-<div v-animattr="5">v-animattr="5"</div>
+<div v-animattr="5">&lt;v-animattr :length="5"&gt;</div>
 
-<div v-animattr.on-load="5">v-animattr.on-load="5"</div>
+<div v-animattr="5" :start="0">&lt;v-animattr :start="0" :length="5"&gt;</div>
 
-<div v-animattr="[0, 2, 4, 6]">v-animattr="[0, 2, 4, 6]"</div>
+<div v-animattr="[0, 2, 4, 6]">&lt;v-animattr :clicks="[0, 2, 4, 6]"&gt;</div>
 
-<div v-animattr="{start: 1, stop: 9, stride: 4}">v-animattr="{start: 1, stop: 9, stride: 4}"</div>
+<div v-animattr="{start: 1, stop: 9, stride: 4}">&lt;v-animattr :start="1" :stop="9" :stride="4"&gt;</div>
 
 <style>
     div[data-animattr] {
@@ -182,6 +188,54 @@ Clicks: {{ $slidev.nav.clicks }}
         opacity: 0.4;
     }
 </style>
+
+---
+
+# Alternative Syntax
+
+<v-click>
+
+The `v-animattr` directive can either be configured with various attributes (start, stop, length, stride, clicks),
+or by passing an object to the directive as an argument.  
+The following examples are thus similar:
+
+```html
+<div v-animattr :start="3" :length="5" :stride="2" />
+
+<div v-animattr="{start: 3, length: 5, stride: 2}" />
+```
+
+</v-click>
+
+<v-click>
+
+It also accepts a few shorthand syntax forms, for commonly used tasks:
+
+```html
+<div v-animattr :length="3" />
+
+<div v-animattr="3" />
+```
+
+```html
+<div v-animattr :clicks="[0,2,3,9]" />
+
+<div v-animattr="[0,2,3,9]" />
+```
+
+</v-click>
+
+<style>
+    .slidev-layout h1 + p {
+        opacity: 1;
+    }
+
+    p {
+        margin-top: 2.5rem !important;
+
+    }
+</style>
+
 
 ---
 title: AnimAttr
