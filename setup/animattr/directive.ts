@@ -1,8 +1,19 @@
+/*
+ *  Main Directive Code
+ */
 import { watch, onUnmounted } from 'vue';
-import { injectionClicks, injectionClicksElements, injectionClicksDisabled, injectionSlidevContext } from "@slidev/client/constants.ts"
+import { injectionClicks, injectionClicksElements, injectionClicksDisabled, injectionSlidevContext } from "@slidev/client/constants.ts";
+import { pluginsOnCreated, pluginsOnClicked } from './plugin';
+import { getName, resolveArgument } from './util';
 
 import type { App, DirectiveBinding, VNode, Ref, UnwrapNestedRefs} from 'vue';
 import type { SlidevContext } from '@slidev/client/modules/context';
+
+/*
+ * PLUGINS
+ */
+import './smil';
+
 
 /*
  * TYPES
@@ -22,7 +33,7 @@ interface AnimattrOptions {
 const attributeName = 'data-animattr';
 const idPrefix = 'animattr-';
 const argumentKeys = ['start', 'stop', 'length', 'stride', 'clicks'];
-const argumentSymbol = Symbol('animattr');
+const argumentSymbol = Symbol('animattr-args');
 
 
 /*
@@ -41,73 +52,49 @@ function makeId(length: number = 5): string {
     return result.join('');
 }
 
-function resolveArguments(binding: DirectiveBinding, node: VNode): AnimattrOptions {
-    // Parse props
-    const props: Partial<AnimattrOptions> = {};
-    if (node.props) {
-        for (const key of argumentKeys) {
-            const dataKey = `data-${key}`;
+function getOptions(binding: DirectiveBinding, node: VNode): AnimattrOptions {
+    // Parse options
+    const options: AnimattrOptions = {};
+    for (const key of argumentKeys) {
+        const value = resolveArgument(key, binding, node);
 
-            if (key in node.props) {
-                if (key === 'clicks') {
-                    const value = node.props[key];
-                    props[key] = typeof value === 'string' ? JSON.parse(value) : value;
-                }
-                else {
-                    props[key] = Number(node.props[key]);
-                }
-            } else if (dataKey in node.props) {
-                if (key === 'clicks') {
-                    const value = node.props[dataKey];
-                    props[key] = typeof value === 'string' ? JSON.parse(value) : value;
-                }
-                else {
-                    props[key] = Number(node.props[dataKey]);
-                }
-            }
+        if (value == undefined) {
+            options[key] = value;
         }
-    }
-
-    // Parse binding args
-    const args: Partial<AnimattrOptions> = {};
-    if (binding.value) {
-        if (Array.isArray(binding.value)) {
-            args.clicks = binding.value;
-        }
-        else if (typeof binding.value === 'object') {
-            for (const key of argumentKeys) {
-                if (key in binding.value) {
-                    if (key === 'clicks') {
-                        const value = binding.value[key];
-                        args[key] = typeof value === 'string' ? JSON.parse(value) : value;
-                    }
-                    else {
-                        args[key] = Number(binding.value[key]);
-                    }
-                }
-            }
+        else if (key === 'clicks') {
+            options[key] = typeof value === 'string' ? JSON.parse(value.replace(/'/g, '"')) : value;
         }
         else {
-            args.length = Number(binding.value);
+            options[key] = Number(value);
         }
     }
 
-    // Check return value
-    const returnValue: AnimattrOptions = {...props, ...args};
-    Object.keys(returnValue).forEach(key => returnValue[key] == undefined && delete returnValue[key]);
-    const objectName = (node as any)?.ctx?.type?.__file?.endsWith('.md') ? String(node.type) : (node as any)?.ctx?.type?.__name ?? String(node.type);
-
-    if ('clicks' in returnValue && Object.keys(returnValue).some(v => v in ['start', 'stop', 'stride', 'length'])) {
-        console.warn(`[${objectName}] AnimAttr options has both "clicks" and "start,stop,length,stride". "clicks" takes precedence.`);
+    // Shortcut options
+    if (Array.isArray(binding.value)) {
+        options.clicks = binding.value;
     }
-    else if ('length' in returnValue && 'stop' in returnValue) {
-        console.warn(`[${objectName}] AnimAttr options has both "stop" and "length". "stop" takes precedence.`);
-    }
-    else if (!('clicks' in returnValue || 'stop' in returnValue || 'length' in returnValue)) {
-        console.warn(`[${objectName}] AnimAttr options has no "clicks", "stop" or "length". No clicks will be added`);
+    else if (binding.value) {
+        const length = Number(binding.value);
+        if (!isNaN(length)) {
+            options.length = length;
+        }
     }
 
-    return returnValue;
+    // Remove undefined or null
+    Object.keys(options).forEach(key => options[key] == undefined && delete options[key]);
+
+    // Check options validity
+    if ('clicks' in options && Object.keys(options).some(v => v in ['start', 'stop', 'stride', 'length'])) {
+        console.warn(`[AnimAttr] <${getName(node)} /> has both "clicks" and "start,stop,length,stride". "clicks" takes precedence.`);
+    }
+    else if ('length' in options && 'stop' in options) {
+        console.warn(`[AnimAttr] <${getName(node)} /> has both "stop" and "length". "stop" takes precedence.`);
+    }
+    else if (!('clicks' in options || 'stop' in options || 'length' in options)) {
+        console.warn(`[AnimAttr] <${getName(node)} /> has no "clicks", "stop" or "length". No clicks will be added`);
+    }
+
+    return options;
 }
 
 function getAnimateArray(options: AnimattrOptions): string[] {
@@ -151,16 +138,13 @@ function getAnimateArray(options: AnimattrOptions): string[] {
     return [];
 }
 
-
-/*
- *  EXPORT
- */
 export default function createAnimattrDirective() {
     return {
         install(app: App) {
             app.directive('animattr', {
                 created(el: HTMLElement, binding, node) {
-                    el[argumentSymbol] = resolveArguments(binding, node);
+                    el[argumentSymbol] = getOptions(binding, node);
+                    pluginsOnCreated(el, binding, node);
 
                     const clicksDisabled: Ref<boolean> = (binding.instance?.$ as any).provides[injectionClicksDisabled as any];
                     if (binding.value && clicksDisabled.value) {
@@ -173,7 +157,7 @@ export default function createAnimattrDirective() {
                     }
                 },
 
-                mounted(el: HTMLElement, binding) {
+                mounted(el: HTMLElement, binding, node) {
                     const clicks: Ref<number> = (binding.instance?.$ as any).provides[injectionClicks as any];
                     const clicksElements: Ref<any[]> = (binding.instance?.$ as any).provides[injectionClicksElements as any];
                     const clicksDisabled: Ref<boolean> = (binding.instance?.$ as any).provides[injectionClicksDisabled as any];
@@ -203,8 +187,12 @@ export default function createAnimattrDirective() {
                     const setAttribute = (limit) => {
                         const value = animateArray.slice(0, limit).join(' ').trim();
                         if (value != attributeValue) {
+                            const currClick = Number(value.split(' ').pop());
+                            const prevClick = Number(attributeValue?.split(' ').pop());
+
                             attributeValue = value;
                             el.setAttribute(attributeName, value);
+                            pluginsOnClicked(el, node, currClick, prevClick);
                         }
                     };
                     
@@ -238,7 +226,7 @@ export default function createAnimattrDirective() {
                             }
 
                             // Update animattr value based on click
-                            // We do not run an update when going backwards through slides, as this usually triggers unwanted animations
+                            // We do not run an update when going backwards from a next slide, as this usually triggers unwanted animations
                             if (!oldPage || oldPage <= newPage) {
                                 setTimeout(() => {setAttribute(Math.max(0, newClick) + 1)});
                             }

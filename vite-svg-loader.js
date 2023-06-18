@@ -2,6 +2,7 @@
 // Adapted to extract SVG Style tags and place them as scoped styles.
 
 const fs = require('fs').promises;
+const path = require('path');
 const { createHash } = require('crypto');
 const { compileTemplate, compileStyle } = require('@vue/compiler-sfc');
 const { optimize: optimizeSvg } = require('svgo');
@@ -47,6 +48,13 @@ module.exports = function svgLoader(options = {}) {
         return `export default ${JSON.stringify(svg)}`;
       }
 
+      if (svgo && !query.skipsvgo) {
+        svg = optimizeSvg(svg, {
+          ...svgoConfig,
+          path: query.filename,
+        }).data
+      }
+
       return {
         code: svg,
       }
@@ -58,13 +66,6 @@ module.exports = function svgLoader(options = {}) {
       }
 
       const query = parseURLRequest(id, defaultImport);
-
-      if (svgo && !query.skipsvgo) {
-        code = optimizeSvg(code, {
-          ...svgoConfig,
-          path: query.filename,
-        }).data
-      }
 
       let style;
       if (scopedCSS && !query.skipscopedcss) {
@@ -98,17 +99,21 @@ module.exports = function svgLoader(options = {}) {
       }
 
       const hashedID = computeIdHash(JSON.stringify(id));
+      const scopeID = `data-v-${hashedID}`;
       const result = compileTemplate({
         id: hashedID,
         source: code,
         filename: query.filename,
         transformAssetUrls: false,
         scoped: scopedCSS && style,
+        compilerOptions: {
+          scopedID: scopeID,
+        },
       });
 
       code = [
         result.code,
-        'export default {render: render}',
+        `export default {render: render, __scopeId: "${scopeID}", __name: "${path.parse(query.filename).name}", __file: "${query.filename}"}`,
       ];
 
       if (scopedCSS && style) {
