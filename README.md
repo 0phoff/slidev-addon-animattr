@@ -8,8 +8,10 @@
 </p>
 
 <p align="center">
-<a href="https://www.npmjs.com/package/slidev-addon-animattr"><img alt="NPM Version" src="https://img.shields.io/npm/v/slidev-addon-animattr?color=4C72B0&label="</a>
-<a href="https://0phoff.github.io/slidev-addon-animattr"><img alt="Demo" src="https://img.shields.io/badge/-demo-0E103D"></a>
+<a href="https://www.npmjs.com/package/slidev-addon-animattr"><img alt="NPM Version" src="https://img.shields.io/npm/v/slidev-addon-animattr?color=4c72b0&label="></a>
+<a href="https://0phoff.github.io/slidev-addon-animattr"><img alt="Demo" src="https://img.shields.io/badge/-demo-3d5b8d"></a>
+<a href="#"><img alt="Downloads" src="https://img.shields.io/npm/dm/slidev-addon-animattr?color=2e446a&label="></a>
+
 </p>
 
 ## Features
