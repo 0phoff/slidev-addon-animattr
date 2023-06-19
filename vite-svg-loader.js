@@ -7,6 +7,8 @@ const { createHash } = require('crypto');
 const { compileTemplate, compileStyle } = require('@vue/compiler-sfc');
 const { optimize: optimizeSvg } = require('svgo');
 
+const BENCHMARK = true;
+
 module.exports = function svgLoader(options = {}) {
   const {
     svgoConfig,
@@ -30,6 +32,10 @@ module.exports = function svgLoader(options = {}) {
     },
 
     async load(id) {
+      if (BENCHMARK) {
+        var t0 = performance.now();
+      }
+
       if (!(id.match(componentRegex) || id.match(rawRegex))) {
         return;
       }
@@ -44,15 +50,14 @@ module.exports = function svgLoader(options = {}) {
         return;
       }
 
-      if (query.raw) {
-        return `export default ${JSON.stringify(svg)}`;
+      if (BENCHMARK) {
+        const t1 = performance.now();
+        console.log(`Loading file: \t\t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
+        t0 = t1;
       }
 
-      if (svgo && !query.skipsvgo) {
-        svg = optimizeSvg(svg, {
-          ...svgoConfig,
-          path: query.filename,
-        }).data
+      if (query.raw) {
+        return `export default ${JSON.stringify(svg)}`;
       }
 
       return {
@@ -61,15 +66,39 @@ module.exports = function svgLoader(options = {}) {
     },
 
     transform(code, id) {
+      if (BENCHMARK) {
+        var t0 = performance.now();
+      }
+      
       if (!id.match(componentRegex)) {
         return;
       }
 
       const query = parseURLRequest(id, defaultImport);
 
+      if (svgo && !query.skipsvgo) {
+        code = optimizeSvg(code, {
+          ...svgoConfig,
+          path: query.filename,
+        }).data
+      }
+
+      if (BENCHMARK) {
+        const t1 = performance.now();
+        console.log(`Optimizing svg: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
+        t0 = t1;
+      }
+
+
       let style;
       if (scopedCSS && !query.skipscopedcss) {
         [code, style] = extractStyles(code);
+      }
+
+      if (BENCHMARK) {
+        const t1 = performance.now();
+        console.log(`Extracting styles: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
+        t0 = t1;
       }
 
       if (query.style) {
@@ -91,6 +120,12 @@ module.exports = function svgLoader(options = {}) {
           'document.adoptedStyleSheets.push(sheet);',
           'export default sheet;',
         ]
+
+        if (BENCHMARK) {
+          const t1 = performance.now();
+          console.log(`Compiling styles: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
+          t0 = t1;
+        }
 
         return {
           code: code.join('\n'),
@@ -130,6 +165,12 @@ module.exports = function svgLoader(options = {}) {
           ...code,
         ];
       }
+
+        if (BENCHMARK) {
+          const t1 = performance.now();
+          console.log(`Compiling template: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
+          t0 = t1;
+        }
 
       return {
         code: code.join('\n'),
