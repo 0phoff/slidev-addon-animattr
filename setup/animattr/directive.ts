@@ -187,8 +187,8 @@ export default function createAnimattrDirective() {
                     const setAttribute = (limit) => {
                         const value = animateArray.slice(0, limit).join(' ').trim();
                         if (value != attributeValue) {
-                            const currClick = Number(value.split(' ').pop());
-                            const prevClick = Number(attributeValue?.split(' ').pop());
+                            const currClick = value.length ? Number(value.split(' ').pop()) : -1;
+                            const prevClick = attributeValue?.length ? Number(attributeValue?.split(' ').pop()) : -1;
 
                             attributeValue = value;
                             el.setAttribute(attributeName, value);

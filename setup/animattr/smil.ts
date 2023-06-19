@@ -119,6 +119,8 @@ const pluginSMIL: Plugin = {
             }
 
             if ((anim.forwards && anim.backwards) || (anim.forwards && prevClick < click) || (anim.backwards && prevClick > click)) {
+                console.debug(`[AnimAttr] [SMIL] executing animation #${anim.id}: ${anim.state} (${prevClick} → ${click})`);
+
                 if (anim.state === 'start') {
                     animElement.beginElement();
                 }
