@@ -4,7 +4,7 @@
 import { watch, onUnmounted } from 'vue';
 import { injectionClicks, injectionClicksElements, injectionClicksDisabled, injectionSlidevContext } from "@slidev/client/constants.ts";
 import { pluginsOnCreated, pluginsOnClicked } from './plugin';
-import { getName, resolveArgument } from './util';
+import { getName, parseObject, resolveArgument } from './util';
 
 import type { App, DirectiveBinding, VNode, Ref, UnwrapNestedRefs} from 'vue';
 import type { SlidevContext } from '@slidev/client/modules/context';
@@ -62,7 +62,7 @@ function getOptions(binding: DirectiveBinding, node: VNode): AnimattrOptions {
             options[key] = value;
         }
         else if (key === 'clicks') {
-            options[key] = typeof value === 'string' ? JSON.parse(value.replace(/'/g, '"')) : value;
+            options[key] = typeof value === 'string' ? parseObject(value) : value;
         }
         else {
             options[key] = Number(value);

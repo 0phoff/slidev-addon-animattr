@@ -2,7 +2,7 @@
  *  SVG SMIL Plugin
  */
 import { registerPlugin } from './plugin';
-import { getName, resolveArgument } from './util';
+import { getName, parseObject, resolveArgument } from './util';
 
 import type { Plugin } from './plugin';
 import type { DirectiveBinding, VNode } from 'vue';
@@ -50,13 +50,15 @@ const pluginSMIL: Plugin = {
     onCreated(el: HTMLElement, binding: DirectiveBinding, node: VNode): boolean {
         // Get argument
         let value = resolveArgument(smilKey, binding, node);
-        if (value == undefined) {
-            return false;
-        }
 
         // Parse argument if string
         if (typeof value === 'string') {
-            value = JSON.parse(value.replace(/'/g, '"'));
+            value = parseObject(value);
+        }
+
+        // Check if valid
+        if (value == undefined) {
+            return false;
         }
         
         // Convert array to object
@@ -113,6 +115,7 @@ const pluginSMIL: Plugin = {
                 console.error(`[AnimAttr] [SMIL] Could not find #${anim.id} inside of <${getName(node)} />.`);
                 continue;
             }
+
             if (!(animElement instanceof SVGAnimationElement)) {
                 console.error(`[AnimAttr] [SMIL] #${anim.id} inside of <${getName(node)} /> is not an SVGAnimationElement.`);
                 continue;
