@@ -1,18 +1,22 @@
 // CODE COPIED FROM https://github.com/jpkleemans/vite-svg-loader/blob/main/index.js
 // Adapted to extract SVG Style tags and place them as scoped styles.
 
-const fs = require('fs').promises;
-const path = require('path');
-const { createHash } = require('crypto');
-const { compileTemplate, compileStyle } = require('@vue/compiler-sfc');
-const { optimize: optimizeSvg } = require('svgo');
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import path from 'node:path';
+import { createHash } from 'crypto';
+import { compileTemplate, compileStyle } from '@vue/compiler-sfc';
+import { optimize as optimizeSvg } from 'svgo';
+import pjson from './package.json';
+import findCacheDir from 'find-cache-dir';
 
 const BENCHMARK = false;
 
-module.exports = function svgLoader(options = {}) {
+export default function svgLoader(options = {}) {
   const {
-    svgoConfig,
     svgo = true,
+    svgoConfig,
+    svgoCache = false,
     defaultImport = 'component',
     scopedCSS = false,
   } = options;
@@ -20,6 +24,7 @@ module.exports = function svgLoader(options = {}) {
   const componentRegex = /\.svg(\?(component|style)(&.*)?)?$/;
   const rawRegex = /\.svg\?raw$/;
   const urlRegex = /\.svg\?url$/;
+  const cacheThunk = (svgo && svgoCache) ? findCacheDir({name: `vite-svg-loader-${pjson.version}`, create: true, thunk: true}) : null;
 
   return {
     name: 'svg-loader',
@@ -32,28 +37,62 @@ module.exports = function svgLoader(options = {}) {
     },
 
     async load(id) {
-      if (BENCHMARK) {
-        var t0 = performance.now();
-      }
+      const benchmark = new BenchmarkTimer(id);
 
       if (!(id.match(componentRegex) || id.match(rawRegex))) {
         return;
       }
 
       const query = parseURLRequest(id, defaultImport);
-
+      const hashedID = computeIdHash(JSON.stringify(query.filename));
       let svg;
-      try {
-        svg = await fs.readFile(query.filename, 'utf-8');
-      } catch (ex) {
-        console.warn('\n', `${id} couldn't be loaded by vite-svg-loader, fallback to default loader`);
-        return;
+
+      if (svgo && svgoCache && !query.skipsvgo) {
+        const cachedFile = cacheThunk(`${hashedID}.svg`);
+
+        try {
+          if (fs.existsSync(cachedFile) && fs.statSync(cachedFile).mtime > fs.statSync(query.filename).mtime) {
+            svg = await fsp.readFile(cachedFile, 'utf-8');
+            benchmark.step('loading cache');
+          }
+        }
+        catch (ex) {
+          console.warn(`[vite-svg-loader] Something went wrong trying to read the cache, rebuilding ${id}`);
+          svg = null;
+        }
       }
 
-      if (BENCHMARK) {
-        const t1 = performance.now();
-        console.log(`Loading file: \t\t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
-        t0 = t1;
+      if (!svg) {
+        try {
+          svg = await fsp.readFile(query.filename, 'utf-8');
+        }
+        catch (ex) {
+          console.warn('\n', `[vite-svg-loader] ${id} couldn't be loaded, fallback to default loader`);
+          return;
+        }
+
+        benchmark.step('loading file');
+
+        if (svgo && !query.skipsvgo) {
+          svg = optimizeSvg(svg, {
+            ...svgoConfig,
+            path: query.filename,
+          }).data
+
+          benchmark.step('optimizing svg');
+
+          if (svgoCache) {
+            const cachedFile = cacheThunk(`${hashedID}.svg`);
+            try {
+              await fsp.writeFile(cachedFile, svg);
+            }
+            catch (ex) {
+              console.warn(`[vite-svg-loader] Could not cache transformed file ${id}`);
+            }
+
+            benchmark.step('storing cache');
+          }
+        }
       }
 
       if (query.raw) {
@@ -66,9 +105,7 @@ module.exports = function svgLoader(options = {}) {
     },
 
     transform(code, id) {
-      if (BENCHMARK) {
-        var t0 = performance.now();
-      }
+      const benchmark = new BenchmarkTimer(id);
       
       if (!id.match(componentRegex)) {
         return;
@@ -76,30 +113,12 @@ module.exports = function svgLoader(options = {}) {
 
       const query = parseURLRequest(id, defaultImport);
 
-      if (svgo && !query.skipsvgo) {
-        code = optimizeSvg(code, {
-          ...svgoConfig,
-          path: query.filename,
-        }).data
-      }
-
-      if (BENCHMARK) {
-        const t1 = performance.now();
-        console.log(`Optimizing svg: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
-        t0 = t1;
-      }
-
-
       let style;
       if (scopedCSS && !query.skipscopedcss) {
         [code, style] = extractStyles(code);
       }
 
-      if (BENCHMARK) {
-        const t1 = performance.now();
-        console.log(`Extracting styles: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
-        t0 = t1;
-      }
+      benchmark.step('extracting styles');
 
       if (query.style) {
         if (!query.id) {
@@ -121,11 +140,7 @@ module.exports = function svgLoader(options = {}) {
           'export default sheet;',
         ]
 
-        if (BENCHMARK) {
-          const t1 = performance.now();
-          console.log(`Compiling styles: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
-          t0 = t1;
-        }
+        benchmark.step('compiling styles');
 
         return {
           code: code.join('\n'),
@@ -166,11 +181,7 @@ module.exports = function svgLoader(options = {}) {
         ];
       }
 
-        if (BENCHMARK) {
-          const t1 = performance.now();
-          console.log(`Compiling template: \t${((t1 - t0) / 1000).toFixed(3)}s  [${id}]`);
-          t0 = t1;
-        }
+      benchmark.step('compiling template');
 
       return {
         code: code.join('\n'),
@@ -238,4 +249,16 @@ function parseURLRequest(id, defaultImport) {
   };
 }
 
-module.exports.default = module.exports
+class BenchmarkTimer {
+  constructor(name) {
+    this.name = name;
+    this.t0 = performance.now();
+  }
+
+  step(...args) {
+    if (!BENCHMARK) { return; }
+    const time = (performance.now() - this.t0) / 1000;
+    console.debug(`[${this.name}] ${time.toFixed(3)}s`, ...args);
+    this.t0 = performance.now();
+  }
+}

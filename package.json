@@ -42,6 +42,7 @@
     "playwright-chromium": "^1.34.3"
   },
   "dependencies": {
+    "find-cache-dir": "3.3.2",
     "svgo": "^3.0.2"
   }
 }

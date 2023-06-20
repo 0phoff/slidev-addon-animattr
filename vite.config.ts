@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [
     svgLoader({
       scopedCSS: true,
+      svgoCache: true,
       svgoConfig: {
         plugins: [
           {
