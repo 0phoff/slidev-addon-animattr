@@ -22,7 +22,7 @@
     "package.json",
     "README.md",
     "vite-svg-loader.js",
-    "vite.config.js",
+    "vite.config.ts",
     ".npmrc"
   ],
   "engines": {
