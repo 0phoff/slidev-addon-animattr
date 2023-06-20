@@ -7,7 +7,7 @@ const { createHash } = require('crypto');
 const { compileTemplate, compileStyle } = require('@vue/compiler-sfc');
 const { optimize: optimizeSvg } = require('svgo');
 
-const BENCHMARK = true;
+const BENCHMARK = false;
 
 module.exports = function svgLoader(options = {}) {
   const {

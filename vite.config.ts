@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import svgLoader from './vite-svg-loader'
+import { defineConfig, UserConfig } from 'vite'
+import svgLoader from './vite-svg-loader.js'
 
 export default defineConfig({
   plugins: [
@@ -31,4 +31,4 @@ export default defineConfig({
       extensions: ['vue', 'md', 'js', 'ts', 'jsx', 'tsx', 'svg'],
     },
   },
-})
+} as UserConfig);
