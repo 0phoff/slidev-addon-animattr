@@ -32,7 +32,7 @@ export default function svgLoader(options = {}) {
 
     resolveId(id) {
       if (id.match(urlRegex)) {
-        return false;
+        return null;
       }
     },
 

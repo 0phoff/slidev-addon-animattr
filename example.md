@@ -4,7 +4,7 @@ title: AnimAttr
 
 <div class="w-full h-full flex flex-col justify-center items-center">
 
-<logo-1 class="mb-8" />
+<img src="/logo-1.svg" class="mb-8" />
 
 # A SliDev Addon
 
