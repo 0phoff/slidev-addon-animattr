@@ -147,10 +147,9 @@ export default function createAnimattrDirective() {
                     pluginsOnCreated(el, binding, node);
 
                     const clicksDisabled: Ref<boolean> = (binding.instance?.$ as any).provides[injectionClicksDisabled as any];
-                    if (binding.value && clicksDisabled.value) {
-                        // Clicks disabled -> setup end state
-                        const attributeValue = getAnimateArray(el[argumentSymbol]).join(' ').trim();
-                        el.setAttribute(attributeName, attributeValue);
+                    if (clicksDisabled.value) {
+                        // Clicks disabled -> setup default state (no animattr attribute)
+                        el.removeAttribute(attributeName);
                     } else {
                         // Clicks enabled -> setup attribute to empty string
                         el.setAttribute(attributeName, '');
